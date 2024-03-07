@@ -127,12 +127,21 @@ const WaveTrack = (props: IProps) => {
     const handleIncreaseView = async () => {
         if (firstViewRef.current) {
             await sendRequest<IBackendRes<any>>({
-                url: `http://localhost:8000/api/v1/tracks/increase-view`,
+                url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/tracks/increase-view`,
                 method: "POST",
                 body: {
                     trackId: track?._id,
                 },
             })
+
+            await sendRequest<any>({
+                url: `/api/revalidate`,
+                method: "GET",
+                queryParams: {
+                    tag: 'track-by-id'
+                }
+            })
+
             router.refresh()
             firstViewRef.current = false
         }

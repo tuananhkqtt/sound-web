@@ -164,6 +164,14 @@ const Step2 = (props: IProps) => {
         if (res.data) {
             toast.success("create success")
             setValue(0)
+
+            await sendRequest<any>({
+                url: `/api/revalidate`,
+                method: "GET",
+                queryParams: {
+                    tag: 'track-by-id'
+                }
+            })
         } else {
             toast.error(res.message)
         }

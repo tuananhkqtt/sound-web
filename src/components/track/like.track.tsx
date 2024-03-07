@@ -19,7 +19,7 @@ const LikeTrack = (props: IProps) => {
     const fetchData = async () => {
         if (session?.access_token) {
             const res = await sendRequest<IBackendRes<IModelPaginate<ITrackLike>>>({
-                url: `http://localhost:8000/api/v1/likes`,
+                url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/likes`,
                 method: "GET",
                 queryParams: {
                     current: 1,
@@ -40,7 +40,7 @@ const LikeTrack = (props: IProps) => {
 
     const handleLikeTrack = async () => {
         await sendRequest<IBackendRes<IModelPaginate<ITrackLike>>>({
-            url: `http://localhost:8000/api/v1/likes`,
+            url: `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/v1/likes`,
             method: "POST",
             body: {
                 track: track?._id,
@@ -52,6 +52,15 @@ const LikeTrack = (props: IProps) => {
         })
 
         fetchData();
+
+        await sendRequest<any>({
+            url: `/api/revalidate`,
+            method: "GET",
+            queryParams: {
+                tag: 'track-by-id'
+            }
+        })
+
         router.refresh();
     }
     return (

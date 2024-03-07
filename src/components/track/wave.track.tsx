@@ -8,17 +8,21 @@ import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
 import './wave.scss';
 import { Tooltip } from "@mui/material";
-import { Translate } from "@mui/icons-material";
+import { useTrackContext } from "@/lib/track.wrapper";
 
-const WaveTrack = () => {
+interface IProps {
+    track: ITrackTop | null;
+}
+
+const WaveTrack = (props: IProps) => {
+    const { track } = props;
     const searchParams = useSearchParams()
     const fileName = searchParams.get('audio');
     const containerRef = useRef<HTMLDivElement>(null);
     const hoverRef = useRef<HTMLDivElement>(null);
-
     const [time, setTime] = useState<string>("0:00");
     const [duration, setDuration] = useState<string>("0:00");
-
+    const { currentTrack, setCurrentTrack } = useTrackContext() as ITrackContext;
 
     const optionsMemo = useMemo((): Omit<WaveSurferOptions, 'container'> => {
         let gradient, progressGradient;
@@ -54,7 +58,6 @@ const WaveTrack = () => {
     }, []);
     const wavesurfer = useWavesurfer(containerRef, optionsMemo);
     const [isPlaying, setIsPlaying] = useState<boolean>(false);
-
     // Initialize wavesurfer when the container mounts
     // or any of the props change
     useEffect(() => {
@@ -101,21 +104,21 @@ const WaveTrack = () => {
     const arrComments = [
         {
             id: 1,
-            avatar: "http://localhost:8000/images/chill1.png",
+            avatar: `${process.env.NEXT_PUBLIC_BACKEND_URL}/images/chill1.png`,
             moment: 10,
             user: "username 1",
             content: "just a comment1"
         },
         {
             id: 2,
-            avatar: "http://localhost:8000/images/chill1.png",
+            avatar: `${process.env.NEXT_PUBLIC_BACKEND_URL}/images/chill1.png`,
             moment: 30,
             user: "username 2",
             content: "just a comment3"
         },
         {
             id: 3,
-            avatar: "http://localhost:8000/images/chill1.png",
+            avatar: `${process.env.NEXT_PUBLIC_BACKEND_URL}/images/chill1.png`,
             moment: 50,
             user: "username 3",
             content: "just a comment3"
@@ -127,6 +130,17 @@ const WaveTrack = () => {
         const percent = (moment / hardCodeDuration) * 100;
         return `${percent}%`
     }
+
+    useEffect(() => {
+        if (wavesurfer && currentTrack.isPlaying) {
+            wavesurfer.pause();
+        }
+    }, [currentTrack])
+
+    useEffect(() => {
+        if (track?._id && !currentTrack?._id)
+            setCurrentTrack({ ...track, isPlaying: false })
+    }, [track])
 
     return (
         <div style={{ marginTop: 20 }}>
@@ -151,7 +165,13 @@ const WaveTrack = () => {
                     <div className="info" style={{ display: "flex" }}>
                         <div>
                             <div
-                                onClick={() => onPlayClick()}
+                                onClick={() => {
+                                    onPlayClick();
+                                    if (track && wavesurfer) {
+                                        setCurrentTrack({ ...currentTrack, isPlaying: false })
+                                    }
+
+                                }}
                                 style={{
                                     borderRadius: "50%",
                                     background: "#f50",
@@ -182,7 +202,7 @@ const WaveTrack = () => {
                                 width: "fit-content",
                                 color: "white"
                             }}>
-                                Song's Title
+                                {track?.title}
                             </div>
                             <div style={{
                                 padding: "0 5px",
@@ -193,7 +213,7 @@ const WaveTrack = () => {
                                 color: "white"
                             }}
                             >
-                                SoundCloud
+                                {track?.description}
                             </div>
                         </div>
                     </div>
@@ -217,7 +237,7 @@ const WaveTrack = () => {
                             {
                                 arrComments.map(item => {
                                     return (
-                                        <Tooltip title={item.content} arrow>
+                                        <Tooltip title={item.content} arrow key={item.id}>
                                             <img
                                                 onPointerMove={(e) => {
                                                     const hover = hoverRef.current!;
@@ -227,12 +247,11 @@ const WaveTrack = () => {
                                                 style={{
                                                     height: 20, width: 20,
                                                     position: "absolute",
-                                                    top: 70,
+                                                    top: 71,
                                                     zIndex: 20,
-                                                    transform: 'translateX(-50%)',
                                                     left: calLeft(item.moment)
                                                 }}
-                                                src={`http://localhost:8000/images/chill1.png`}
+                                                src`{`${process.env.NEXT_PUBLIC_BACKEND_URL}/images/chill1.png`}
                                             />
                                         </Tooltip>
                                     )

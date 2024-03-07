@@ -63,7 +63,6 @@ const MainSlider = (props: IProps) => {
     };
     //box === div
     return (
-
         <Box
             sx={{
                 margin: "0 50px",
@@ -89,7 +88,13 @@ const MainSlider = (props: IProps) => {
                     return (
                         <div className="track" key={track._id}>
                             <img src={`${process.env.NEXT_PUBLIC_BACKEND_URL}/images/${track.imgUrl}`} />
-                            <Link href={`/track/${track._id}?audio=${track.trackUrl}`}>
+                            <Link
+                                href={`/track/${track._id}?audio=${track.trackUrl}&id=${track._id}`}
+                                style={{
+                                    color: 'unset',
+                                    textDecoration: 'unset'
+                                }}
+                            >
                                 <h4>{track.title}</h4>
                             </Link>
                             <h5>{track.description}</h5>

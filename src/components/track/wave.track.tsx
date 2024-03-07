@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useWavesurfer } from "@/utils/customHook";
 import { WaveSurferOptions } from 'wavesurfer.js';
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -9,13 +9,19 @@ import PauseIcon from '@mui/icons-material/Pause';
 import './wave.scss';
 import { Tooltip } from "@mui/material";
 import { useTrackContext } from "@/lib/track.wrapper";
+import { fetchDefaultImages, sendRequest } from "@/utils/api";
+import CommentTrack from "./comment.track";
+import LikeTrack from "./like.track";
 
 interface IProps {
     track: ITrackTop | null;
+    comments: ITrackComment[];
 }
 
 const WaveTrack = (props: IProps) => {
-    const { track } = props;
+    const { track, comments } = props;
+    const router = useRouter()
+    const firstViewRef = useRef(true)
     const searchParams = useSearchParams()
     const fileName = searchParams.get('audio');
     const containerRef = useRef<HTMLDivElement>(null);
@@ -101,33 +107,9 @@ const WaveTrack = (props: IProps) => {
         return `${minutes}:${paddedSeconds}`
     }
 
-    const arrComments = [
-        {
-            id: 1,
-            avatar: `${process.env.NEXT_PUBLIC_BACKEND_URL}/images/chill1.png`,
-            moment: 10,
-            user: "username 1",
-            content: "just a comment1"
-        },
-        {
-            id: 2,
-            avatar: `${process.env.NEXT_PUBLIC_BACKEND_URL}/images/chill1.png`,
-            moment: 30,
-            user: "username 2",
-            content: "just a comment3"
-        },
-        {
-            id: 3,
-            avatar: `${process.env.NEXT_PUBLIC_BACKEND_URL}/images/chill1.png`,
-            moment: 50,
-            user: "username 3",
-            content: "just a comment3"
-        },
-    ]
-
     const calLeft = (moment: number) => {
-        const hardCodeDuration = 199;
-        const percent = (moment / hardCodeDuration) * 100;
+        let duration = wavesurfer?.getDuration() ?? 0
+        const percent = (moment / duration) * 100;
         return `${percent}%`
     }
 
@@ -141,6 +123,20 @@ const WaveTrack = (props: IProps) => {
         if (track?._id && !currentTrack?._id)
             setCurrentTrack({ ...track, isPlaying: false })
     }, [track])
+
+    const handleIncreaseView = async () => {
+        if (firstViewRef.current) {
+            await sendRequest<IBackendRes<any>>({
+                url: `http://localhost:8000/api/v1/tracks/increase-view`,
+                method: "POST",
+                body: {
+                    trackId: track?._id,
+                },
+            })
+            router.refresh()
+            firstViewRef.current = false
+        }
+    }
 
     return (
         <div style={{ marginTop: 20 }}>
@@ -167,6 +163,7 @@ const WaveTrack = (props: IProps) => {
                             <div
                                 onClick={() => {
                                     onPlayClick();
+                                    handleIncreaseView()
                                     if (track && wavesurfer) {
                                         setCurrentTrack({ ...currentTrack, isPlaying: false })
                                     }
@@ -235,23 +232,24 @@ const WaveTrack = (props: IProps) => {
                             style={{ position: "relative" }}
                         >
                             {
-                                arrComments.map(item => {
+                                comments.map((item, index) => {
                                     return (
-                                        <Tooltip title={item.content} arrow key={item.id}>
+                                        <Tooltip title={item.content} arrow key={item._id}>
                                             <img
                                                 onPointerMove={(e) => {
                                                     const hover = hoverRef.current!;
                                                     hover.style.width = calLeft(item.moment)
                                                 }}
-                                                key={item.id}
+                                                key={item._id}
                                                 style={{
                                                     height: 20, width: 20,
                                                     position: "absolute",
                                                     top: 71,
                                                     zIndex: 20,
-                                                    left: calLeft(item.moment)
+                                                    transform: "translateX(-50%)",
+                                                    left: calLeft(item.moment),
                                                 }}
-                                                src={`${process.env.NEXT_PUBLIC_BACKEND_URL}/images/chill1.png`}
+                                                src={`${fetchDefaultImages(item?.user?.type)}`}
                                             />
                                         </Tooltip>
                                     )
@@ -273,8 +271,29 @@ const WaveTrack = (props: IProps) => {
                         width: 250,
                         height: 250
                     }}>
+                        {track?.imgUrl
+                            &&
+                            <img
+                                src={`${process.env.NEXT_PUBLIC_BACKEND_URL}/images/${track?.imgUrl}`}
+                                width={'100%'}
+                                height={'100%'}
+                                style={{ objectFit: 'cover' }}
+                            />
+                        }
                     </div>
                 </div>
+            </div>
+            <div>
+                <LikeTrack
+                    track={track}
+                />
+            </div>
+            <div>
+                <CommentTrack
+                    comments={comments}
+                    track={track}
+                    wavesurfer={wavesurfer}
+                />
             </div>
         </div >
     )

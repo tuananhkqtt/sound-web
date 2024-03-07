@@ -251,7 +251,7 @@ const WaveTrack = (props: IProps) => {
                                                     zIndex: 20,
                                                     left: calLeft(item.moment)
                                                 }}
-                                                src`{`${process.env.NEXT_PUBLIC_BACKEND_URL}/images/chill1.png`}
+                                                src={`${process.env.NEXT_PUBLIC_BACKEND_URL}/images/chill1.png`}
                                             />
                                         </Tooltip>
                                     )
